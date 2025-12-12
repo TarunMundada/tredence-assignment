@@ -8,3 +8,6 @@ def register(name):
 
 def get_tool(name):
     return TOOLS.get(name)
+
+def list_tools():
+    return list(TOOLS.keys())

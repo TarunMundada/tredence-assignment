@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from app.models import DataState, Anomaly, Rule
-
+from app.registry import register
 # ----------------------
 # Helpers
 # ----------------------
@@ -18,6 +18,7 @@ def _rule_key(rule: Rule) -> Tuple:
 # Nodes
 # ----------------------
 
+@register("profile_data")
 def profile_data(state: DataState) -> DataState:
     """
     Simple profiler: for each column compute dtype, null_count, unique, and
@@ -44,6 +45,7 @@ def profile_data(state: DataState) -> DataState:
     state.profile = profile
     return state
 
+@register("identify_anomalies")
 def identify_anomalies(state: DataState) -> DataState:
     """
     Detect anomalies:
@@ -85,6 +87,7 @@ def identify_anomalies(state: DataState) -> DataState:
     state.anomaly_count = len(anomalies)
     return state
 
+@register("generate_rules")
 def generate_rules(state: DataState) -> DataState:
     """
     Heuristic rule generator:
@@ -168,6 +171,7 @@ def generate_rules(state: DataState) -> DataState:
     state.rules = [r.dict() for r in clean_rules]
     return state
 
+@register("appy_rules")
 def apply_rules(state: DataState) -> DataState:
     """
     Apply rules to the in-memory dataframe.
@@ -262,6 +266,7 @@ def apply_rules(state: DataState) -> DataState:
     state.data = df.to_dict(orient="records")
     return state
 
+@register("re_evaluate")
 def re_evaluate(state: DataState) -> DataState:
     """
     Increase iteration counter, re-profile and re-run anomaly detection.
