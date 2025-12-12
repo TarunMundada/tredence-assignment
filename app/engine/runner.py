@@ -65,3 +65,76 @@ async def run_graph(graph: Graph, state: DataState, run_id: Optional[str] = None
             break
         current = next_node
     return state, log
+
+async def stream_graph(graph: Graph, state, run_id: Optional[str] = None):
+    """
+    Async generator that yields execution events in real-time.
+    Yields dicts that can be sent directly over WebSocket.
+    """
+    current = graph.start_node
+    max_iters = state.metadata.get("max_iterations", 5)
+
+    # start event
+    yield {
+        "type": "start",
+        "run_id": run_id,
+        "start_node": current,
+        "initial_state": state.dict() if hasattr(state, "dict") else state
+    }
+
+    while current is not None:
+        node_fn = graph.get_node_fn(current)
+        if node_fn is None:
+            yield {"type": "error", "message": f"node '{current}' not found in node_map"}
+            break
+
+        start_ts = time.time()
+        # run node (support sync + async)
+        try:
+            if asyncio.iscoroutinefunction(node_fn):
+                state = await node_fn(state)
+            else:
+                # run sync in executor to avoid blocking the event loop if node is heavy
+                state = await asyncio.get_event_loop().run_in_executor(None, node_fn, state)
+        except Exception as e:
+            yield {"type": "error", "node": current, "message": str(e)}
+            break
+
+        end_ts = time.time()
+        duration = end_ts - start_ts
+
+        # step event (trim snapshot if huge)
+        yield {
+            "type": "step",
+            "node": current,
+            "duration": duration,
+            "anomaly_count": getattr(state, "anomaly_count", None),
+            "state_snapshot": state.dict() if hasattr(state, "dict") else state
+        }
+
+        # next node decision
+        edge = graph.edges.get(current)
+        next_node = None
+        if isinstance(edge, str):
+            next_node = edge
+        elif isinstance(edge, dict):
+            cond = edge.get("condition")
+            if cond:
+                try:
+                    if eval_condition(cond.get("check"), state):
+                        next_node = cond.get("true")
+                    else:
+                        next_node = cond.get("false")
+                except Exception as e:
+                    yield {"type": "error", "message": f"condition eval error: {e}"}
+                    break
+
+        # safety
+        if getattr(state, "iteration", 0) >= max_iters:
+            yield {"type": "info", "message": "Max iterations reached", "iteration": state.iteration}
+            break
+
+        current = next_node
+
+    # completion
+    yield {"type": "complete", "final_state": state.dict() if hasattr(state, "dict") else state}
