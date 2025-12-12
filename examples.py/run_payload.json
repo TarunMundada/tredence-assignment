@@ -1,0 +1,15 @@
+{
+  "graph_id": "<GRAPH_ID>",
+  "initial_state": {
+    "data": [
+      {"id": 1, "age": 25},
+      {"id": 2, "age": -5},
+      {"id": 3, "age": null}
+    ],
+    "metadata": {
+      "threshold": 0,
+      "max_iterations": 5,
+      "non_negative_columns": ["age"]
+    }
+  }
+}

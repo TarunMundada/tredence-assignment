@@ -1,0 +1,38 @@
+# Python general
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Byte-compiled / C extensions
+*.so
+
+# Local data or logs
+*.log
+
+# Uvicorn reload files
+*.pid
+
+# Cache
+.cache/
+
+# Example: if storing CSV test files
+*.csv

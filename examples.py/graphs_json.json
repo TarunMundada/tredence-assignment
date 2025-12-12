@@ -1,0 +1,23 @@
+{
+  "start_node": "profile_data",
+  "nodes": [
+    "profile_data",
+    "identify_anomalies",
+    "generate_rules",
+    "apply_rules",
+    "re_evaluate"
+  ],
+  "edges": {
+    "profile_data": "identify_anomalies",
+    "identify_anomalies": "generate_rules",
+    "generate_rules": "apply_rules",
+    "apply_rules": "re_evaluate",
+    "re_evaluate": {
+      "condition": {
+        "check": { "lhs": "anomaly_count", "op": ">", "rhs": 0 },
+        "true": "generate_rules",
+        "false": null
+      }
+    }
+  }
+}
